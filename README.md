@@ -14,11 +14,11 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/microduck_walking.gif" alt="A PPO policy walking the Microduck in MuJoCo" width="560">
+  <img src="docs/images/microduck_walking.gif" alt="PPO policy walking the official Pollen Robotics Microduck in MuJoCo" width="560">
 </p>
 
 <p align="center">
-  <sub>Trained PPO policy walking 4.2 m in 10 seconds (20 fps recording, 5M training steps).</sub>
+  <sub>Trained on the official Pollen Robotics MJCF (`scene_walk.xml`).</sub>
 </p>
 
 Train the [Microduck](https://pollen-robotics.com/microduck/) biped to walk
@@ -93,20 +93,24 @@ If you want a **quick sanity check** that everything is wired up:
 
 ### Results on this machine
 
-**Using the official Pollen Robotics MJCF model:** no trained policy is
-included at this time. The previous policy was trained on a different converted
-model and is archived in `models/old/` for reference.
+Trained with PPO on the official Pollen Robotics MJCF (`assets/scene_walk.xml`):
 
-After training on `assets/scene_walk.xml`, update this section and regenerate
-`docs/images/` with `./.venv/bin/python record.py` and
-`./.venv/bin/python make_figures.py`.
+| Metric | Value |
+|---|---|
+| Mean forward distance (10 eval episodes) | **~1.4 m** (mixed gait; can reach ~2 m) |
+| Best recorded episode | **~2.11 m** |
+| Fall rate | ~50% (still improving) |
+| Policy | `models/microduck_ppo.zip` (trained 2M+ steps, resumed) |
+
+Previous policy (old converted model) archived in `models/old/`. Retrain longer
+for a cleaner gait. Regenerate media with `./.venv/bin/python record.py`.
 
 <p align="center">
-  <img src="docs/images/training_curve.png" alt="PPO learning curve" width="900">
+  <img src="docs/images/training_curve.png" alt="PPO learning curve on official model" width="900">
 </p>
 
 <p align="center">
-  <sub>Training curve will be updated after retraining on the official model.</sub>
+  <sub>Evaluation curve from training on the official Pollen Robotics MJCF.</sub>
 </p>
 
 [Download the full-quality MP4](docs/images/microduck_walking.mp4) ·
