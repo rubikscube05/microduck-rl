@@ -14,15 +14,15 @@ The agent sees `obs`, chooses an `action`, and receives a scalar `reward`.
 `terminated` means the task ended for a physical reason (the duck fell over).
 `truncated` means we hit a time limit (the episode was cut short).
 
-The actual physics is simulated by MuJoCo.  We load the converted URDF / MJCF
-file in `assets/microduck.xml` and talk to MuJoCo through its Python API.
+The actual physics is simulated by MuJoCo. We load the official Pollen Robotics
+MJCF from `assets/scene_walk.xml` and talk to MuJoCo through its Python API.
 
 Coordinate conventions used here
 --------------------------------
 * +x points forward (the direction the duck should walk).
 * +y points to the duck's left.
 * +z points up.
-* The floating base is the `base_link` body with a MuJoCo `freejoint`.
+* The floating base is the `trunk_base` body with a MuJoCo `freejoint`.
 * `qpos[0:3]` is the world position of the base.
 * `qpos[3:7]` is the base orientation quaternion (w, x, y, z).
 * The 10 leg hinge angles follow in the order of `LEG_JOINT_NAMES`.

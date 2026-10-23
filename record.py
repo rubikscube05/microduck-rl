@@ -57,9 +57,19 @@ def main():
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    model = PPO.load(args.model, device="cpu")
     env = MicroDuckEnv()
     obs, _ = env.reset(seed=args.seed)
+
+    model = None
+    if Path(args.model).exists():
+        try:
+            model = PPO.load(args.model, device="cpu")
+        except Exception as e:
+            print(f"[record] Could not load {args.model}: {e}")
+            model = None
+
+    if model is None:
+        print("[record] No trained policy found - recording with zero actions on official model")
 
     # The control loop runs at 100 Hz, so render every `stride` control steps
     # to hit the requested video frame rate.
@@ -83,8 +93,11 @@ def main():
     done = False
     step = 0
 
-    while not done:
-        action, _ = model.predict(obs, deterministic=True)
+    while not done and step < 1000:
+        if model is not None:
+            action, _ = model.predict(obs, deterministic=True)
+        else:
+            action = np.zeros(env.action_space.shape, dtype=np.float32)
         obs, reward, terminated, truncated, info = env.step(action)
         done = terminated or truncated
         step += 1

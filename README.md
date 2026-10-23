@@ -26,8 +26,11 @@ forward in MuJoCo using reinforcement learning (PPO from Stable-Baselines3).
 
 This repository is written as a **learning project**: the environment, reward,
 training loop, evaluation, and viewer are heavily commented so you can read the
-code top to bottom and understand how a real RL pipeline fits together. It ships
-with a trained policy, so you can watch it walk before training your own.
+code top to bottom and understand how a real RL pipeline fits together.
+
+**Note:** The previously trained policy was for a different model and is now
+stored in `models/old/`. You must retrain on the official Pollen Robotics MJCF
+before using `watch.py`/`evaluate.py` with a new policy.
 
 The robot model comes from the official
 [Pollen Robotics Microduck](https://github.com/pollen-robotics/microduck)
@@ -63,10 +66,10 @@ and [microduck_rl](https://github.com/pollen-robotics/microduck_rl) repositories
 # 1. Set up Python (creates ./.venv and installs the dependencies)
 ./build.sh
 
-# 2. Look at the robot with gravity off
+# 2. Look at the robot
 ./.venv/bin/python view.py
 
-# 3. Train (5M steps, roughly 30-40 minutes on an RTX 3050)
+# 3. Train on the official model (5M steps recommended)
 ./.venv/bin/python train.py --timesteps 5000000 --n-envs 4
 
 # 4. Watch the trained policy
@@ -82,9 +85,6 @@ and [microduck_rl](https://github.com/pollen-robotics/microduck_rl) repositories
 ./.venv/bin/tensorboard --logdir logs
 ```
 
-The repository already includes `models/microduck_ppo.zip`, so you can skip
-straight to step 4 if you only want to watch the trained policy.
-
 If you want a **quick sanity check** that everything is wired up:
 
 ```bash
@@ -93,34 +93,21 @@ If you want a **quick sanity check** that everything is wired up:
 
 ### Results on this machine
 
-After 5M total PPO steps (2M with the first reward, then 3M more after
-strengthening the forward-progress term), the included policy scores:
+**Using the official Pollen Robotics MJCF model:** no trained policy is
+included at this time. The previous policy was trained on a different converted
+model and is archived in `models/old/` for reference.
 
-| Metric | Value |
-|---|---|
-| Mean forward distance | **3.52 m** per 10 s episode |
-| Mean episode reward | **3040** |
-| Fall rate | **2/10** episodes |
-| Success rate (>= 1 m) | **9/10** episodes |
-
-`models/microduck_ppo.zip` is the final walking policy. The earlier standing
-policy is kept as `models/microduck_ppo_v1_standing.zip` for comparison. The
-policy walks a little faster than the 0.18 m/s reward target because the linear
-progress term saturates at 0.25 m/s and the policy continues to gain a small
-speed-tracking reward beyond that.
+After training on `assets/scene_walk.xml`, update this section and regenerate
+`docs/images/` with `./.venv/bin/python record.py` and
+`./.venv/bin/python make_figures.py`.
 
 <p align="center">
-  <img src="docs/images/training_curve.png" alt="PPO learning curve showing reward and episode length rising over 3M fine-tuning steps" width="900">
+  <img src="docs/images/training_curve.png" alt="PPO learning curve" width="900">
 </p>
 
 <p align="center">
-  <sub>Evaluation reward and episode length during the 3M-step fine-tuning run. The dashed line marks the reward of standing still.</sub>
+  <sub>Training curve will be updated after retraining on the official model.</sub>
 </p>
-
-The first 2M steps used the original speed-only reward and converged to a stable
-stand. Strengthening the forward-progress term and reducing the survival bonus
-made walking clearly more valuable than standing, and the policy found a gait in
-the next 3M steps. The recording above is episode 0 with seed 5000.
 
 [Download the full-quality MP4](docs/images/microduck_walking.mp4) ·
 [View the still frame](docs/images/microduck_walking.png)
@@ -519,40 +506,21 @@ If training is not working, change one thing at a time.
 
 ## How the MuJoCo model was made
 
-The original repository provides a URDF. MuJoCo does not use URDF directly in
-training, so the model was converted and then completed:
+The model comes directly from the official
+[Pollen Robotics microduck_rl](https://github.com/pollen-robotics/microduck_rl)
+repository:
 
-1. **URDF -> MJCF conversion** with
-   [`urdf2mjcf`](https://pypi.org/project/urdf2mjcf/).
-   The original files are preserved in `assets/urdf/`.
-2. **Free joint**: the base is attached to the world with a MuJoCo `freejoint`,
-   so the duck can move and fall in 3D.
-3. **Collision geometry**: the URDF only has visual meshes. Simple box colliders
-   were added for the two feet and the trunk. The foot boxes are derived from
-   the sole mesh bounding boxes.
-4. **Position actuators**: the original URDF has joint limits and damping but no
-   motors. Position servos were added for all 15 joints, with the 10 leg servos
-   controlled by the policy.
-5. **Mass scale**: the URDF inertial values are placeholders (`0.01 kg` per
-   link, `0.16 kg` total). They were scaled by 5 to match the published
-   Microduck mass of approximately **0.8 kg**, keeping the relative mass
-   distribution.
-6. **Camera and floor**: a ground plane, light, and tracking cameras were added
-   for visualization.
-
-### Regenerating from the URDF
-
-If you change the URDF, you can regenerate the MJCF:
-
-```bash
-./.venv/bin/pip install urdf2mjcf
-./.venv/bin/urdf2mjcf assets/urdf/microduck.urdf \
-    --output assets/microduck.xml --copy-meshes
-```
-
-The converter can produce a `scale` attribute that MuJoCo rejects, and it does
-not add the collisions, mass scale, or actuators described above. The checked-in
-`assets/microduck.xml` is the corrected, trainable version.
+1. **Official MJCF**: `assets/robot_walk.xml` and related files
+   (`additional.xml`, `joints_properties.xml`, `sensors.xml`,
+   `config_mjcf_walk.json`) were pulled from
+   `src/mjlab_microduck/robot/microduck/` on branch `develop`.
+2. **Training scene**: `assets/scene_walk.xml` includes the robot and adds a
+   floor, skybox, lighting, and keyframes (used for inspection/reset).
+3. **Meshes**: STL meshes from `assets/` in the official repo were copied to
+   `assets/meshes/`. `robot_walk.xml` uses `meshdir="meshes"`.
+4. **Actuators**: 14 position servos for the leg/head joints; the policy
+   controls the 10 leg joints (`hip_yaw`, `hip_roll`, `hip_pitch`, `knee`,
+   `ankle` for both legs), head joints are held at zero.
 
 ---
 
@@ -590,15 +558,13 @@ usually a good balance.
 
 ## License and credits
 
-* Robot description and meshes:
-  [adityakamath/microduck_description](https://github.com/adityakamath/microduck_description)
-  (Apache-2.0 for URDF/xacro/launch; mesh assets originate from the Microduck
-  project, see that repository for mechanical-asset terms).
+* Robot model and meshes: [pollen-robotics/microduck](https://github.com/pollen-robotics/microduck)
+  and [pollen-robotics/microduck_rl](https://github.com/pollen-robotics/microduck_rl)
+  (see their LICENSE files for terms).
 * Microduck is a robot by [Pollen Robotics](https://pollen-robotics.com/microduck/).
 * RL stack: [MuJoCo](https://mujoco.org/),
   [Gymnasium](https://gymnasium.farama.org/),
   [Stable-Baselines3](https://stable-baselines3.readthedocs.io/).
-* URDF-to-MJCF conversion: [urdf2mjcf](https://pypi.org/project/urdf2mjcf/).
 
 This project is for learning and experimentation. Always check the upstream
 licenses before redistributing meshes or model files.
