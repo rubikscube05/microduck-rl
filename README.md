@@ -29,11 +29,11 @@ training loop, evaluation, and viewer are heavily commented so you can read the
 code top to bottom and understand how a real RL pipeline fits together. It ships
 with a trained policy, so you can watch it walk before training your own.
 
-The robot description comes from
-[adityakamath/microduck_description](https://github.com/adityakamath/microduck_description)
-(Apache-2.0 URDF, meshes from the Microduck project). The original URDF is kept
-in `assets/urdf/`; `assets/microduck.xml` is the MuJoCo version used for
-training.
+The robot model comes from the official
+[Pollen Robotics Microduck](https://github.com/pollen-robotics/microduck)
+and [microduck_rl](https://github.com/pollen-robotics/microduck_rl) repositories
+(MuJoCo MJCF with meshes). The training scene uses `assets/scene_walk.xml`
+(included via `assets/robot_walk.xml`).
 
 ---
 
@@ -132,9 +132,13 @@ the next 3M steps. The recording above is episode 0 with seed 5000.
 ```
 microduck_rl/
 ├── assets/
-│   ├── microduck.xml          MuJoCo model (converted + made trainable)
-│   ├── meshes/                STL visual meshes from the URDF
-│   └── urdf/                  original Microduck URDF/xacro files
+│   ├── scene_walk.xml         Training scene (official Pollen model)
+│   ├── robot_walk.xml         Official Microduck MJCF
+│   ├── joints_properties.xml  Actuator/joint defaults
+│   ├── sensors.xml            IMU/sensor definitions
+│   ├── additional.xml         Extra defaults/equality
+│   ├── config_mjcf_walk.json  MJCF configuration
+│   └── meshes/                STL meshes from the official repo
 ├── docs/images/               GIFs, MP4s, and training figures used by this README
 ├── microduck_env.py           Gymnasium environment (the RL problem)
 ├── train.py                   PPO training script

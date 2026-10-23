@@ -37,7 +37,7 @@ from gymnasium import spaces
 
 # Path to the MJCF model that was converted from the Microduck URDF.
 # Keeping it relative to this file means the project can be moved anywhere.
-MODEL_PATH = Path(__file__).resolve().parent / "assets" / "microduck.xml"
+MODEL_PATH = Path(__file__).resolve().parent / "assets" / "scene_walk.xml"
 
 # The 10 joints that the RL policy controls.
 # Each leg has a 3-DOF hip (yaw / roll / pitch), a knee, and an ankle.
@@ -61,7 +61,6 @@ HEAD_JOINT_NAMES = [
     "head_pitch",
     "head_yaw",
     "head_roll",
-    "jaw",
 ]
 
 # A crouched standing pose found by solving for a flat-footed stance.
@@ -152,12 +151,12 @@ class MicroDuckEnv(gym.Env):
 
         # Actuator ids for the leg position servos.
         self.leg_act_ids = np.array(
-            [self.model.actuator(f"{name}_ctrl").id for name in LEG_JOINT_NAMES],
+            [self.model.actuator(name).id for name in LEG_JOINT_NAMES],
             dtype=int,
         )
         # Actuator ids for the head servos that we hold at zero.
         self.head_act_ids = np.array(
-            [self.model.actuator(f"{name}_ctrl").id for name in HEAD_JOINT_NAMES],
+            [self.model.actuator(name).id for name in HEAD_JOINT_NAMES],
             dtype=int,
         )
 
