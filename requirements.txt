@@ -1,0 +1,18 @@
+# Python packages needed to train and run the Microduck policy.
+# Install with:
+#   ./.venv/bin/pip install -r requirements.txt
+
+# Deep-learning framework used by Stable-Baselines3.
+torch>=2.6
+
+# Physics simulator that steps the Microduck model.
+mujoco>=3.2
+
+# Standard RL environment API (reset/step/observation/action spaces).
+gymnasium>=1.0
+
+# PPO and the vectorized-environment utilities.
+stable-baselines3>=2.4
+
+# Training dashboards.
+tensorboard

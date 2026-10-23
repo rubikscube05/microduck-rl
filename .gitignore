@@ -1,0 +1,16 @@
+# Python virtual environment (usually a symlink in this project)
+.venv
+
+# Generated training artifacts
+models/
+logs/
+train.log
+nohup.out
+
+# Python cache
+__pycache__/
+*.pyc
+
+# MuJoCo and training logs
+MUJOCO_LOG.TXT
+train*.log
