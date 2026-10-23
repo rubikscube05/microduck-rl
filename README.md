@@ -1,11 +1,33 @@
-# Microduck RL Walker
+<h1 align="center">Microduck RL Walker</h1>
+
+<p align="center">
+  <b>Teaching a 25 cm biped to walk with PPO, MuJoCo, and Stable-Baselines3.</b><br>
+  <sub>5M environment steps &nbsp;·&nbsp; 3.5 m mean distance &nbsp;·&nbsp; 9/10 episodes reach 1 m</sub>
+</p>
+
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white">
+  <img alt="MuJoCo" src="https://img.shields.io/badge/MuJoCo-3.x-1f6feb">
+  <img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?logo=pytorch&logoColor=white">
+  <img alt="Stable-Baselines3" src="https://img.shields.io/badge/Stable--Baselines3-2.x-6f42c1">
+  <img alt="RL" src="https://img.shields.io/badge/RL-PPO-2da44e">
+</p>
+
+<p align="center">
+  <img src="docs/images/microduck_walking.gif" alt="A PPO policy walking the Microduck in MuJoCo" width="560">
+</p>
+
+<p align="center">
+  <sub>Trained PPO policy walking 4.2 m in 10 seconds (20 fps recording, 5M training steps).</sub>
+</p>
 
 Train the [Microduck](https://pollen-robotics.com/microduck/) biped to walk
 forward in MuJoCo using reinforcement learning (PPO from Stable-Baselines3).
 
 This repository is written as a **learning project**: the environment, reward,
 training loop, evaluation, and viewer are heavily commented so you can read the
-code top to bottom and understand how a real RL pipeline fits together.
+code top to bottom and understand how a real RL pipeline fits together. It ships
+with a trained policy, so you can watch it walk before training your own.
 
 The robot description comes from
 [adityakamath/microduck_description](https://github.com/adityakamath/microduck_description)
@@ -18,33 +40,34 @@ training.
 ## Table of contents
 
 1. [Quick start](#quick-start)
-2. [Project layout](#project-layout)
-3. [Reinforcement learning in 60 seconds](#reinforcement-learning-in-60-seconds)
-4. [The environment](#the-environment)
-5. [Observation space](#observation-space)
-6. [Action space](#action-space)
-7. [Reward function](#reward-function)
-8. [Training with PPO](#training-with-ppo)
-9. [Reading TensorBoard](#reading-tensorboard)
-10. [Watching and evaluating](#watching-and-evaluating)
-11. [Tuning guide](#tuning-guide)
-12. [How the MuJoCo model was made](#how-the-mujoco-model-was-made)
-13. [Troubleshooting](#troubleshooting)
-14. [License and credits](#license-and-credits)
+2. [Results](#results-on-this-machine)
+3. [Project layout](#project-layout)
+4. [Reinforcement learning in 60 seconds](#reinforcement-learning-in-60-seconds)
+5. [The environment](#the-environment)
+6. [Observation space](#observation-space)
+7. [Action space](#action-space)
+8. [Reward function](#reward-function)
+9. [Training with PPO](#training-with-ppo)
+10. [Reading TensorBoard](#reading-tensorboard)
+11. [Watching, evaluating, and recording](#watching-evaluating-and-recording)
+12. [Tuning guide](#tuning-guide)
+13. [How the MuJoCo model was made](#how-the-mujoco-model-was-made)
+14. [Troubleshooting](#troubleshooting)
+15. [License and credits](#license-and-credits)
 
 ---
 
 ## Quick start
 
 ```bash
-# 1. Set up Python (this project reuses ../duck/.venv through a symlink)
+# 1. Set up Python (creates ./.venv and installs the dependencies)
 ./build.sh
 
 # 2. Look at the robot with gravity off
 ./.venv/bin/python view.py
 
-# 3. Train (about 10-20 minutes on this machine)
-./.venv/bin/python train.py --timesteps 1000000 --n-envs 4
+# 3. Train (5M steps, roughly 30-40 minutes on an RTX 3050)
+./.venv/bin/python train.py --timesteps 5000000 --n-envs 4
 
 # 4. Watch the trained policy
 ./run.sh          # or ./.venv/bin/python watch.py
@@ -52,9 +75,15 @@ training.
 # 5. Evaluate it over 20 fresh episodes
 ./.venv/bin/python evaluate.py --episodes 20
 
-# 6. Inspect the learning curves
+# 6. Record a README-style GIF and MP4
+./.venv/bin/python record.py
+
+# 7. Inspect the learning curves
 ./.venv/bin/tensorboard --logdir logs
 ```
+
+The repository already includes `models/microduck_ppo.zip`, so you can skip
+straight to step 4 if you only want to watch the trained policy.
 
 If you want a **quick sanity check** that everything is wired up:
 
@@ -80,6 +109,22 @@ policy walks a little faster than the 0.18 m/s reward target because the linear
 progress term saturates at 0.25 m/s and the policy continues to gain a small
 speed-tracking reward beyond that.
 
+<p align="center">
+  <img src="docs/images/training_curve.png" alt="PPO learning curve showing reward and episode length rising over 3M fine-tuning steps" width="900">
+</p>
+
+<p align="center">
+  <sub>Evaluation reward and episode length during the 3M-step fine-tuning run. The dashed line marks the reward of standing still.</sub>
+</p>
+
+The first 2M steps used the original speed-only reward and converged to a stable
+stand. Strengthening the forward-progress term and reducing the survival bonus
+made walking clearly more valuable than standing, and the policy found a gait in
+the next 3M steps. The recording above is episode 0 with seed 5000.
+
+[Download the full-quality MP4](docs/images/microduck_walking.mp4) ·
+[View the still frame](docs/images/microduck_walking.png)
+
 ---
 
 ## Project layout
@@ -90,11 +135,14 @@ microduck_rl/
 │   ├── microduck.xml          MuJoCo model (converted + made trainable)
 │   ├── meshes/                STL visual meshes from the URDF
 │   └── urdf/                  original Microduck URDF/xacro files
+├── docs/images/               GIFs, MP4s, and training figures used by this README
 ├── microduck_env.py           Gymnasium environment (the RL problem)
 ├── train.py                   PPO training script
 ├── evaluate.py                Headless policy evaluation
 ├── watch.py                   Live MuJoCo viewer for a trained policy
 ├── view.py                    Inspect the model without a policy
+├── record.py                  Render an MP4/GIF of a trained policy
+├── make_figures.py            Regenerate the README training curve and diagram
 ├── build.sh                   Environment setup
 ├── run.sh                     Launch the viewer
 ├── requirements.txt
@@ -147,6 +195,14 @@ A **Gymnasium environment** is just a Python class with two main methods:
 You do not need to implement PPO yourself: Stable-Baselines3 provides it. The
 interesting part of an RL project is almost always **the environment and the
 reward**.
+
+<p align="center">
+  <img src="docs/images/pipeline.png" alt="Microduck training pipeline: URDF to MuJoCo to Gymnasium to PPO" width="900">
+</p>
+
+<p align="center">
+  <sub>From the robot description to a walking policy. The feedback arrow is one PPO rollout.</sub>
+</p>
 
 ---
 
@@ -355,7 +411,7 @@ explained variance rising above 0.5. It may be noisy early on.
 
 ---
 
-## Watching and evaluating
+## Watching, evaluating, and recording
 
 ### Live viewer
 
@@ -386,6 +442,35 @@ states.
 ./.venv/bin/python view.py            # gravity off, floating
 ./.venv/bin/python view.py --gravity  # let it settle on the floor
 ```
+
+### Record a video or GIF
+
+```bash
+./.venv/bin/python record.py
+./.venv/bin/python record.py --seed 5000 --width 640 --height 480 --fps 20
+```
+
+`record.py` renders offscreen, so it does not need a visible window. It writes
+three files to `docs/images/`:
+
+* `microduck_walking.mp4` - full-quality H.264 video,
+* `microduck_walking.gif` - the inline preview used at the top of this README,
+* `microduck_walking.png` - a still frame.
+
+The HUD in the recording shows the simulation time and forward distance. Change
+`--seed` to record a different evaluation episode.
+
+### Make the README figures
+
+The training curve is plotted from `logs/eval/evaluations.npz`, which the
+`EvalCallback` writes during training. `make_figures.py` regenerates both the
+training curve and the pipeline diagram:
+
+```bash
+./.venv/bin/python make_figures.py
+```
+
+Run it after training to update the curve with your own results.
 
 ---
 

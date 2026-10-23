@@ -16,3 +16,8 @@ stable-baselines3>=2.4
 
 # Training dashboards.
 tensorboard
+
+# README figures and video/GIF recording.
+matplotlib
+imageio
+imageio-ffmpeg
