@@ -97,13 +97,12 @@ Trained with PPO on the official Pollen Robotics MJCF (`assets/scene_walk.xml`):
 
 | Metric | Value |
 |---|---|
-| Mean forward distance (10 eval episodes) | **~1.4 m** (mixed gait; can reach ~2 m) |
+| Mean forward distance (10 eval episodes) | **~1.4 m** |
 | Best recorded episode | **~2.11 m** |
-| Fall rate | ~50% (still improving) |
-| Policy | `models/microduck_ppo.zip` (trained 2M+ steps, resumed) |
+| Fall rate | ~50% |
+| Policy | `models/microduck_ppo.zip` (trained 2M+ steps) |
 
-Previous policy (old converted model) archived in `models/old/`. Retrain longer
-for a cleaner gait. Regenerate media with `./.venv/bin/python record.py`.
+Regenerate media: `./.venv/bin/python record.py` | Curves: `./.venv/bin/python make_figures.py`
 
 <p align="center">
   <img src="docs/images/training_curve.png" alt="PPO learning curve on official model" width="900">
